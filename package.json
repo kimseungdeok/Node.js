@@ -1,1 +1,22 @@
-{}
+{
+  "name": "node",
+  "description": "Node.js 학습",
+  "version": "1.0.0",
+  "main": "main.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kimseungdeok/Node.js.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/kimseungdeok/Node.js/issues"
+  },
+  "homepage": "https://github.com/kimseungdeok/Node.js#readme",
+  "dependencies": {
+    "sanitize-html": "^2.6.1"
+  }
+}

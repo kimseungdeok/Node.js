@@ -2,37 +2,69 @@ var http = require('http');
 var fs = require('fs');
 var url = require('url'); // url은 모듈 url을 가리킴
 var qs = require('querystring');
+var sanitizeHtml = require('sanitize-html');
 
-
-function templeteHTML(title, list, body, control){
-  return `
-  <!doctype html>
-<html>
-<head>
-<title>WEB1 - ${title}</title>
-<meta charset="utf-8">
-</head>
-<body>
-<h1><a href="/">WEB</a></h1>
-${list}
-${control}
-${body}
-</body>
-</html>
-
-`;
-}
-
-function templeteList(filelist){
-  var list = '<ul>';
-  var i = 0;
-  while(i < filelist.length){
-    list = list + `<li><a href="/?id=${filelist[i]}">${filelist[i]}</a></li>`
-    i = i + 1;
+var templete = {
+  HTML : function(title, list, body, control){
+    return `
+    <!doctype html>
+  <html>
+  <head>
+  <title>WEB1 - ${title}</title>
+  <meta charset="utf-8">
+  </head>
+  <body>
+  <h1><a href="/">WEB</a></h1>
+  ${list}
+  ${control}
+  ${body}
+  </body>
+  </html>
+  
+  `;
+  },
+  list : function(filelist){
+    var list = '<ul>';
+    var i = 0;
+    while(i < filelist.length){
+      list = list + `<li><a href="/?id=${filelist[i]}">${filelist[i]}</a></li>`
+      i = i + 1;
+    }
+    list = list + '</ul>';
+    return list;
   }
-  list = list + '</ul>';
-  return list;
 }
+
+
+// function templeteHTML(title, list, body, control){
+//   return `
+//   <!doctype html>
+// <html>
+// <head>
+// <title>WEB1 - ${title}</title>
+// <meta charset="utf-8">
+// </head>
+// <body>
+// <h1><a href="/">WEB</a></h1>
+// ${list}
+// ${control}
+// ${body}
+// </body>
+// </html>
+
+// `;
+// }
+
+// function templeteList(filelist){
+//   var list = '<ul>';
+//   var i = 0;
+//   while(i < filelist.length){
+//     list = list + `<li><a href="/?id=${filelist[i]}">${filelist[i]}</a></li>`
+//     i = i + 1;
+//   }
+//   list = list + '</ul>';
+//   return list;
+// }
 
 var app = http.createServer(function(request,response){
     var _url = request.url;
@@ -49,11 +81,18 @@ var app = http.createServer(function(request,response){
 
           var title = 'Welcome';
           var description = 'Hello, Node.js';
-          var list = templeteList(filelist);
+        //   var list = templeteList(filelist);
+        //   var templete = templeteHTML(title, list,`<h2>${title}</h2>${description}`, `<a href="/create">create</a> `);
+        // response.writeHead(200); 
+        // response.end(templete);
 
-          var templete = templeteHTML(title, list,`<h2>${title}</h2>${description}`, `<a href="/create">create</a> `);
-        response.writeHead(200); 
-        response.end(templete);
+        var list = templete.list(filelist);
+        var html = templete.HTML(title, list,
+          `<h2>${title}</h2>${description}`, 
+          `<a href="/create">create</a> `);
+      response.writeHead(200); 
+      response.end(html);
+        
         })
       } else {
         fs.readdir('./data', function(error, filelist){
@@ -61,18 +100,22 @@ var app = http.createServer(function(request,response){
 
         fs.readFile(`data/${queryData.id}`,'utf8', function(err,description){
           var title = queryData.id;
-          var list = templeteList(filelist);
-          var templete = templeteHTML(title, list,
-            `<h2>${title}</h2>${description}`, 
+          var sanitizedTitle = sanitizeHtml(title);
+          var sanitizedDescription = sanitizeHtml(description,  {
+            allowedTags: ['h1'],
+          });
+          var list = templete.list(filelist);
+          var html = templete.HTML(sanitizedTitle, list,
+            `<h2>${sanitizedTitle}</h2>${sanitizedDescription}`, 
             `<a href="/create">create</a> 
-             <a href="/update?id=${title}">update</a>
+             <a href="/update?id=${sanitizedTitle}">update</a>
              <form action="delete_process" method="post">
-              <input type="hidden" name="id" value="${title}">
+              <input type="hidden" name="id" value="${sanitizedTitle}">
               <input type="submit" value="delete">
              </form>`
             );
         response.writeHead(200); 
-        response.end(templete);
+        response.end(html);
         });
       });
       }
@@ -82,9 +125,9 @@ var app = http.createServer(function(request,response){
       console.log(filelist);
 
       var title = 'WEB - create';
-      var list = templeteList(filelist);
+      var list = templete.list(filelist);
 
-      var templete = templeteHTML(title, list,`
+      var html = templete.HTML(title, list,`
       <form action="/create_process" method="post">
       <p><input type="text" name="title" placeholder="title"></p>
       <p>
@@ -96,7 +139,7 @@ var app = http.createServer(function(request,response){
       </form>
       `, '');
     response.writeHead(200); 
-    response.end(templete);
+    response.end(html);
     })
   } else if(pathname=== '/create_process'){
     var body = '';
@@ -120,8 +163,8 @@ var app = http.createServer(function(request,response){
 
     fs.readFile(`data/${queryData.id}`,'utf8', function(err,description){
       var title = queryData.id;
-      var list = templeteList(filelist);
-      var templete = templeteHTML(title, list,
+      var list = templete.list(filelist);
+      var html = templete.HTML(title, list,
         `
         <form action="/update_process" method="post">
         <input type="hidden" name="id" value="${title}">
@@ -137,7 +180,7 @@ var app = http.createServer(function(request,response){
         `<a href="/create">create</a> <a href="/update?id=${title}">update</a>`
         );
     response.writeHead(200); 
-    response.end(templete);
+    response.end(html);
     });
   });
   } else if(pathname == '/update_process') {
