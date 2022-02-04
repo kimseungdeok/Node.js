@@ -14,9 +14,10 @@ var f1 = function(){
 
 console.log(f1);
 
-var a = [f];
+var a = [f1];
 a[0]();
+
 var o = {
-    func:f
+    func:f1
 }
 o.func();
